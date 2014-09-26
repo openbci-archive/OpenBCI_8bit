@@ -99,7 +99,8 @@ void setup(void) {
    OBCI.activateChannel(chan, gainCode, inputType); // add option to include in bias
    // add SRB2 inclusion here?
  }
-
+//setup the electrode impedance detection parameters
+  OBCI.configure_Zdetect(LOFF_MAG_6NA, LOFF_FREQ_31p2HZ);
 
   
   Serial.print(F("ADS1299 Device ID: 0x")); Serial.println(OBCI.getADS_ID(),HEX);
@@ -206,6 +207,73 @@ void getCommand(char token){
         changeChannelState_maintainRunningState(7,ACTIVATE); break;
       case 'i':
         changeChannelState_maintainRunningState(8,ACTIVATE); break;
+        
+//TURN IMPEDANCE DETECTION ON AND OFF
+      case '!':
+        changeChannel_Zdetect_maintainRunningState(1,ACTIVATE,PCHAN); break;
+      case '@':
+        changeChannel_Zdetect_maintainRunningState(2,ACTIVATE,PCHAN); break;
+      case '#':
+        changeChannel_Zdetect_maintainRunningState(3,ACTIVATE,PCHAN); break;
+      case '$':
+        changeChannel_Zdetect_maintainRunningState(4,ACTIVATE,PCHAN); break;
+      case '%':
+        changeChannel_Zdetect_maintainRunningState(5,ACTIVATE,PCHAN); break;
+      case '^':
+        changeChannel_Zdetect_maintainRunningState(6,ACTIVATE,PCHAN); break;
+      case '&':
+        changeChannel_Zdetect_maintainRunningState(7,ACTIVATE,PCHAN); break;
+      case '*':
+        changeChannel_Zdetect_maintainRunningState(8,ACTIVATE,PCHAN); break;
+      case 'Q':
+        changeChannel_Zdetect_maintainRunningState(1,DEACTIVATE,PCHAN); break;
+      case 'W':
+        changeChannel_Zdetect_maintainRunningState(2,DEACTIVATE,PCHAN); break;
+      case 'E':
+        changeChannel_Zdetect_maintainRunningState(3,DEACTIVATE,PCHAN); break;
+      case 'R':
+        changeChannel_Zdetect_maintainRunningState(4,DEACTIVATE,PCHAN); break;
+      case 'T':
+        changeChannel_Zdetect_maintainRunningState(5,DEACTIVATE,PCHAN); break;
+      case 'Y':
+        changeChannel_Zdetect_maintainRunningState(6,DEACTIVATE,PCHAN); break;
+      case 'U':
+        changeChannel_Zdetect_maintainRunningState(7,DEACTIVATE,PCHAN); break;
+      case 'I':
+        changeChannel_Zdetect_maintainRunningState(8,DEACTIVATE,PCHAN); break;
+       case 'A':
+        changeChannel_Zdetect_maintainRunningState(1,ACTIVATE,NCHAN); break;
+      case 'S':
+        changeChannel_Zdetect_maintainRunningState(2,ACTIVATE,NCHAN); break;
+      case 'D':
+        changeChannel_Zdetect_maintainRunningState(3,ACTIVATE,NCHAN); break;
+      case 'F':
+        changeChannel_Zdetect_maintainRunningState(4,ACTIVATE,NCHAN); break;
+      case 'G':
+        changeChannel_Zdetect_maintainRunningState(5,ACTIVATE,NCHAN); break;
+      case 'H':
+        changeChannel_Zdetect_maintainRunningState(6,ACTIVATE,NCHAN); break;
+      case 'J':
+        changeChannel_Zdetect_maintainRunningState(7,ACTIVATE,NCHAN); break;
+      case 'K':
+        changeChannel_Zdetect_maintainRunningState(8,ACTIVATE,NCHAN); break;
+      case 'Z':
+        changeChannel_Zdetect_maintainRunningState(1,DEACTIVATE,NCHAN); break;
+      case 'X':
+        changeChannel_Zdetect_maintainRunningState(2,DEACTIVATE,NCHAN); break;
+      case 'C':
+        changeChannel_Zdetect_maintainRunningState(3,DEACTIVATE,NCHAN); break;
+      case 'V':
+        changeChannel_Zdetect_maintainRunningState(4,DEACTIVATE,NCHAN); break;
+      case 'B':
+        changeChannel_Zdetect_maintainRunningState(5,DEACTIVATE,NCHAN); break;
+      case 'N':
+        changeChannel_Zdetect_maintainRunningState(6,DEACTIVATE,NCHAN); break;
+      case 'M':
+        changeChannel_Zdetect_maintainRunningState(7,DEACTIVATE,NCHAN); break;
+      case '<':
+        changeChannel_Zdetect_maintainRunningState(8,DEACTIVATE,NCHAN); break; 
+        
      
 //TEST SIGNAL CONTROL COMMANDS
       case '0':
@@ -333,6 +401,31 @@ int activateAllChannelsToTestCondition(int testInputCode, byte amplitudeCode, by
   for (int Ichan=1; Ichan <= 8; Ichan++) {
     OBCI.activateChannel(Ichan,gainCode,testInputCode);  //Ichan must be [1 8]...it does not start counting from zero
   }
+  //restart, if it was running before
+  if (is_running_when_called == true) {
+    startRunning(cur_outputType);
+  }
+}
+
+int changeChannel_Zdetect_maintainRunningState(int chan, int start, int code_P_N_Both)
+{
+  boolean is_running_when_called = is_running;
+  int cur_outputType = outputType;
+  
+  //must stop running to change channel settings
+  stopRunning();
+  if (start == true) {
+    Serial.print(F("Activating channel "));
+    Serial.print(chan);
+    Serial.println(F(" Lead-Off Detection"));
+    OBCI.changeChannel_Zdetect(chan,ON,code_P_N_Both);
+  } else {
+    Serial.print(F("Deactivating channel "));
+    Serial.print(chan);
+    Serial.println(F(" Lead-Off Detection"));
+    OBCI.changeChannel_Zdetect(chan,OFF,code_P_N_Both);
+  }
+  
   //restart, if it was running before
   if (is_running_when_called == true) {
     startRunning(cur_outputType);

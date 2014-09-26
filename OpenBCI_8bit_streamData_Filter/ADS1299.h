@@ -54,11 +54,13 @@ public:
     void stopADS(void);
 	
 	
-    void activateChannel(int N, byte gainCode,byte inputCode); //setup the channel 1-8
-    void activateChannel(int, byte, byte, boolean);
-    void deactivateChannel(int N);                            //disable given channel 1-8
-	
-    void configureInternalTestSignal(byte amplitudeCode, byte freqCode);  
+    void activateChannel(int,byte,byte); //setup the channel 1-8
+    void activateChannel(int,byte,byte,boolean);
+    void deactivateChannel(int);                            //disable given channel 1-8
+    
+    void configureLeadOffDetection(byte, byte);
+    void changeChannelLeadOffDetection(int, int, int);
+    void configureInternalTestSignal(byte, byte);  
     
     boolean isDataAvailable(void);
     void writeADSchannelData(void);

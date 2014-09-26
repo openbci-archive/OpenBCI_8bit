@@ -37,6 +37,8 @@ class OpenBCI {
     void activateChannel(int,byte,byte,boolean);
     void deactivateChannel(int);
     void configureInternalTestSignal(byte,byte);
+    void configure_Zdetect(byte,byte);
+    void changeChannel_Zdetect(int,int, int);
     void reset_ads(void);
     boolean isDataAvailable(void);
     void updateChannelData(void);
