@@ -107,8 +107,6 @@
 #define LIS3DH_SS (5)  // LIS3DH chip select
 
 //Pick which version of OpenBCI you have
-#define OPENBCI_V1 (1)    //Sept 2013
-#define OPENBCI_V2 (2)    //Oct 24, 2013
 #define OPENBCI_V2 (3)	  //April, 2014
 #define OPENBCI_NCHAN (8)  // number of EEG channels
 
@@ -151,9 +149,13 @@
 #define PCHAN (1)
 #define NCHAN (2)
 #define BOTHCHAN (3)
-
 #define OFF (0)
 #define ON (1)
+
+// used as command parameters
+#define ACTIVATE_SHORTED (2)
+#define ACTIVATE (1)
+#define DEACTIVATE (0)
 
 //binary communication codes for each packet
 #define PCKT_START 0xA0

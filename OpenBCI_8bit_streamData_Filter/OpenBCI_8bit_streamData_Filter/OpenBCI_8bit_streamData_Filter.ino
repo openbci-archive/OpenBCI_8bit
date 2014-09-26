@@ -69,14 +69,12 @@ Biquad_multiChan notch_filter1(MAX_N_CHANNELS,bq_type_notch,NOTCH_FREQ_HZ / SAMP
 Biquad_multiChan notch_filter2(MAX_N_CHANNELS,bq_type_notch,NOTCH_FREQ_HZ / SAMPLE_RATE_HZ, NOTCH_Q, NOTCH_PEAK_GAIN_DB); //one for each channel because the object maintains the filter states
 boolean useFilters = false;  //enable or disable as you'd like...turn off if you're daisy chaining!
 //------------------------------------------------------------------------------
-#define OUTPUT_NOTHING (0)
-//#define OUTPUT_TEXT (1)
-#define OUTPUT_BINARY (2)
-#define OUTPUT_BINARY_SYNTHETIC (3)
-#define OUTPUT_BINARY_4CHAN (4)
-//#define OUTPUT_BINARY_OPENEEG (6)
-//#define OUTPUT_BINARY_OPENEEG_SYNTHETIC (7)
-#define OUTPUT_BINARY_WITH_ACCEL (8)
+// these are all subject to the radio requirements: 31byte max packet length (radio maxPacketLength - 1 for checkSum)
+#define OUTPUT_NOTHING (0)  // quiet
+#define OUTPUT_BINARY (2)  // normal transfer mode
+#define OUTPUT_BINARY_SYNTHETIC (3)  // needs portage
+#define OUTPUT_BINARY_4CHAN (4)  // needs portage
+#define OUTPUT_BINARY_WITH_ACCEL (8)  // needs testing
 int outputType;
 //------------------------------------------------------------------------------
   
@@ -92,12 +90,11 @@ void setup(void) {
   
   delay(1000);
  
-  OBCI.initialize();  // ADD OPTION FOR DAISY
+  OBCI.initialize();  
   Serial.print(F("OpenBCI V3 Stream Data To Dongle\nSetting ADS1299 Channel Values\n"));
 //  setup channels on the ADS as desired. specify gain and input type for each
  for (int chan=1; chan <= nActiveChannels; chan++) {
-   OBCI.activateChannel(chan, gainCode, inputType); // add option to include in bias
-   // add SRB2 inclusion here?
+   OBCI.activateChannel(chan, gainCode, inputType); // add option to include in bias and SRB1/2
  }
 //setup the electrode impedance detection parameters
   OBCI.configure_Zdetect(LOFF_MAG_6NA, LOFF_FREQ_31p2HZ);
@@ -110,8 +107,8 @@ void setup(void) {
   // tell the controlling program that we're ready to start!
   Serial.println(F("Press '?' to query and print ADS1299 register settings again")); //read it straight from flash
   Serial.println(F("Press 1-8 to disable EEG Channels, q-i to enable (all enabled by default)"));
-  Serial.println(F("Press 'f' to enable filters.  'g' to disable filters"));
-  Serial.println(F("Press 'b' (binary) to begin streaming data..."));  
+  Serial.println(F("Press 'f' to enable 60Hz notch,  'g' to disable"));
+  Serial.println(F("Press 'b' to begin streaming data, press 's' to stop..."));  
 
 }
 
@@ -132,8 +129,8 @@ void loop() {
       if(OBCI.useAccel && OBCI.LIS3DH_DataReady()){
         OBCI.getAccelData();    // fresh axis data goes into the X Y Z 
       }
-      if (useFilters) applyFilters();
-      OBCI.writeDataToDongle(sampleCounter);
+      if (useFilters) applyFilters();    // apply the 60Hz notch, maybe
+      OBCI.sendChannelData(sampleCounter);  // 
       sampleCounter++;
   
   }
@@ -142,9 +139,7 @@ void loop() {
 
 
 
-#define ACTIVATE_SHORTED (2)
-#define ACTIVATE (1)
-#define DEACTIVATE (0)
+// some variables to help find 'burger' commands
 int plusCounter = 0;
 char testChar;
 unsigned long commandTimer;
@@ -153,19 +148,19 @@ void serialEvent(){
   while(Serial.available()){      
     char inChar = (char)Serial.read();
     
-    if(plusCounter == 1){
-    testChar = inChar;
-    plusCounter++;
-      commandTimer = millis();
+    if(plusCounter == 1){  // if we have received the first 'bun'
+      testChar = inChar;   // this might be the 'patty'
+      plusCounter++;       // get ready to look for another 'bun'
+      commandTimer = millis();  // don't wait too long!
     }
   
-    if(inChar == '+'){
-      plusCounter++;
-      if(plusCounter == 3){
-        if(millis() - commandTimer < 10){
-          getCommand(testChar);
+    if(inChar == '+'){  // if we see a 'bun' on the serial
+      plusCounter++;    // make a note of it
+      if(plusCounter == 3){  // looks like we got a command character
+        if(millis() - commandTimer < 10){  // if it's not too late,
+          getCommand(testChar);    // decode the command
         }
-        plusCounter = 0;
+        plusCounter = 0;  // get ready for the next one
       }
     }
   }
@@ -315,7 +310,7 @@ void getCommand(char token){
      case 's':
         stopRunning();
         OBCI.useAccel = false;
-        startBecauseOfSerial = is_running;
+        startBecauseOfSerial = is_running;  // looking for a good use for these booleans
         break;
      // case 'x':
      //    toggleRunState(OUTPUT_BINARY_SYNTHETIC);
@@ -324,12 +319,10 @@ void getCommand(char token){
      //    if (is_running) Serial.println(F("OBCI: Starting synthetic..."));
      //    break;
       case 'f':
-          useFilters = true;
-//         Serial.println(F("OBCI: enabaling filters"));
+          useFilters = true;  
          break;
       case 'g':
           useFilters = false;
-//         Serial.println(F("OBCI: disabling filters"));
          break;
      case '?':
         //print state of all registers

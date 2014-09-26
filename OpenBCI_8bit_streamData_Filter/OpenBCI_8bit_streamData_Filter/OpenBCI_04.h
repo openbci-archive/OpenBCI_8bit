@@ -26,7 +26,7 @@ class OpenBCI {
 
     // BOARD WIDE FUNCTIONS
     void initialize(void);
-    void writeDataToDongle(byte);
+    void sendChannelData(byte);
     void startStreaming(void);
     void stopStreaming(void);
 

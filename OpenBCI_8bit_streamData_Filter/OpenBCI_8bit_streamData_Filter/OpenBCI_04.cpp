@@ -94,7 +94,7 @@ void OpenBCI::setSRB1(boolean desired_state){
   ads.setSRB1(desired_state);
 }
 
-void OpenBCI::writeDataToDongle(byte sampleNumber){
+void OpenBCI::sendChannelData(byte sampleNumber){
   Serial.write(sampleNumber); // 1 byte
   ads.writeADSchannelData();  // 24 bytes
   accel.writeLIS3DHdata();    // 6 bytes
