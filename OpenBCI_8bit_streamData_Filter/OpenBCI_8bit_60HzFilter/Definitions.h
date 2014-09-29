@@ -107,8 +107,6 @@
 #define LIS3DH_SS (5)  // LIS3DH chip select
 
 //Pick which version of OpenBCI you have
-#define OPENBCI_V1 (1)    //Sept 2013
-#define OPENBCI_V2 (2)    //Oct 24, 2013
 #define OPENBCI_V2 (3)	  //April, 2014
 #define OPENBCI_NCHAN (8)  // number of EEG channels
 
@@ -138,6 +136,26 @@
 #define ADSTESTSIG_PULSE_FAST (0b00000001)
 #define ADSTESTSIG_DCSIG (0b00000011)
 #define ADSTESTSIG_NOCHANGE (0b11111111)
+
+//Lead-off signal choices
+#define LOFF_MAG_6NA (0b00000000)
+#define LOFF_MAG_24NA (0b00000100)
+#define LOFF_MAG_6UA (0b00001000)
+#define LOFF_MAG_24UA (0b00001100)
+#define LOFF_FREQ_DC (0b00000000)
+#define LOFF_FREQ_7p8HZ (0b00000001)
+#define LOFF_FREQ_31p2HZ (0b00000010)
+#define LOFF_FREQ_FS_4 (0b00000011)
+#define PCHAN (1)
+#define NCHAN (2)
+#define BOTHCHAN (3)
+#define OFF (0)
+#define ON (1)
+
+// used as command parameters
+#define ACTIVATE_SHORTED (2)
+#define ACTIVATE (1)
+#define DEACTIVATE (0)
 
 //binary communication codes for each packet
 #define PCKT_START 0xA0
