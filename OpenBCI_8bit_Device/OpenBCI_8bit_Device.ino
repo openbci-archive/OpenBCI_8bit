@@ -21,11 +21,11 @@ Free to use and share. This code presented as-is. wysiwyg
     Radio RX in normal and streamingData mode:
       1st byte is packet checkSum, radioBuffer[300]
     Radio TX:
-
+      1st byte is packet checkSum, 2D buffer 20 x 32 bytes
     
   In streamData mode, Device uses a fixed packet size and also a time-out
   There is a chance of packet corruption in the Device serial RX:
-    If you don't use the time-out in streamData, the data can shift phase.
+    If you don't use the time-out in streamData mode, the data can phase shift...
     
   Single byte commands sent from the PC are prepared by the Host with '+' before and after.
   This is to avoid letting the UNO get a 'ghost' command during streamData mode
