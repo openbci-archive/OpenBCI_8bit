@@ -6,6 +6,8 @@ Using the OpenBCI USB Dongle, it is possible to upload the OpenBCI_8bit_streamDa
 
 Copy the Biquad folder to your Documents/Arduino/Libraries folder, and the OpenBCI_8bit_streamData_Filter folder to your Documents/Arduino folder. Select UNO from the boards menue int Arduino IDE, and the correct serial port of the Dongle. All OpenBCI hardware comes flashed with the latest firmware. Upgrading the OpenBCI Board firmware is possible over-the-air using the OpenBCI Dongle. Dongle (Host) and Board (Device) firmware is also upgradable using advanced version of the Arduino IDE and installing RFduino libraries as specified here http://www.rfduino.com/download-rfduino-library/ tutorial to be released soon.. 
 
+Note that to USE the OpenBCI system, you will generally use the OpenBCI USB Dongle.  The dongle requries that you install the FTDI drivers for your particular operating system: http://www.ftdichip.com/FTDrivers.htm
+
 Arduino code developed by Chip Audette, modified by Joel Murphy, Luke Travis, Conor Russomanno. Summer 2014
 
 RFduino code developed by Joel Murphy, Leif Percifield, Conor Russomanno. Summer 2014
