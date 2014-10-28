@@ -21,10 +21,14 @@
 
 #include <EEPROM.h>
 #include <SPI.h>
-// #include <SdFat.h>   // not using SD. could be an option later
-// #include <SdFatUtil.h>
-#include "OpenBCI_04.h"  
+#include "OpenBCI_04.h" 
 
+// Get SdFat libraries from: https://github.com/greiman/SdFat and put in Documents\Arduino\libraries
+#include <SdFat.h>   // not using SD, but still needed because it is referenced in OpenCI_04.h and won't compile unless included here.  Why?
+#include <SdFatUtil.h> // not using SD, but still needed because it is referencedin OpenCI_04.h and won't compile unless included here.  Why?
+ 
+// Get Biquad filter library from: https://github.com/OpenBCI/OpenBCI/tree/master/Arduino/Libraries/Biquad
+#include <Biquad_multiChan.h>   //modified from this source code:  http://www.earlevel.com/main/2012/11/26/biquad-c-source-code/
 
 //------------------------------------------------------------------------------
 //  << SD CARD BUSINESS >> has bee taken out. See OBCI_SD_LOG_CMRR 
@@ -55,7 +59,6 @@ boolean useAccel = false;
 //------------------------------------------------------------------------------
 //Design filters  (This BIQUAD class requires ~6K of program space!  Ouch.)
 //For frequency response of these filters: http://www.earlevel.com/main/2010/12/20/biquad-calculator/
-#include <Biquad_multiChan.h>   //modified from this source code:  http://www.earlevel.com/main/2012/11/26/biquad-c-source-code/
 #define SAMPLE_RATE_HZ (250.0)  //default setting for OpenBCI
 #define FILTER_Q (0.5)        //critically damped is 0.707 (Butterworth)
 #define FILTER_PEAK_GAIN_DB (0.0) //we don't want any gain in the passband
