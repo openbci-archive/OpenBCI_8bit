@@ -5,22 +5,22 @@ a serial link between RFDuino modules
 Since the Device must initiate communication, the
 device "polls" the Host evey 50mS when not sending packets.
 Host is connected to PC via USB VCP (FTDI).
-Device is connectedd to uC (Arduino or compatible).
-The code switches between 'normal' mode and 'streamingData' mode.
+Device is connectedd to uC (ATmega328P with Arduino UNO bootloaderor).
+The code switches between 'normal' mode and 'streamingData' mode when 'b' is seen on serial port.
 Normal mode expects a call-response protocol between the Host PC and Device uC.
 Normal mode supports avrdude and will allow over-air upload to Device-connected uC.
 
-StreamingData mode expects a continuous stream of data from the uC via Device.
+StreamingData mode expects a continuous Serial stream of data from the uC.
 In streamingData mode, Host insterts a pre-fix and post-fix to the data for PC coordination.
 
-Single byte serial messages sent from PC are modified to include a '+' before and after
-This is to avoid an error experienced when the UNO gets a 'ghost' command byte during streamData mode
+Single byte serial messages sent from PC are modified by the Host to include a '+' before and after
+This is to avoid an error experienced when the uC gets a 'ghost' command byte during streamData mode
 
 Made by Joel Murphy with Leif Percifield and Conor Russomanno, Summer 2014
 Free to use and share. This code presented for use as-is. wysiwyg.
 */
 
-#include <RFduinoGZLL.h>
+#include <RFduinoGZLL.h>  // using the Gazelle Stack
 
 device_t role = HOST;  // This is the HOST code!
 int LED = 2;           // blue LED on GPIO2
@@ -33,8 +33,8 @@ int serialBuffCounter = 0;
 unsigned long serialTimer;              // used to time end of serial message
 boolean serialToSend = false;           // set when serial data is ready to go to serial
 boolean serialTiming = false;           // set to start serial timer
-
-char radioBuffer[300];		              // buffer to hold radio data
+const int radioBuffMax = 300;
+char radioBuffer[radioBuffMax];		              // buffer to hold radio data
 int radioIndex = 0;                  	  // used in sendToHost to protect len value
 int packetCount = 0;                    // used to keep track of packets in received radio message
 int packetsReceived = 0;                // used to count incoming packets
@@ -52,17 +52,17 @@ int numBytes;                           // counter for receiving/sending stream
 int tail = 0;                           // used when streaming to make ring buffer
 boolean streamToSend = false;           // send radio data to serial port using ring buffer and pre/post-fix
 unsigned long totalPacketsReceived = 0; // used for verbose 
-unsigned long streamingIdleTimer;
+unsigned long streamingIdleTimer;	// used to escape streamingData mode
 
 
 void setup(){
-
-  RFduinoGZLL.begin(role); // start the GZLL stack
-  Serial.begin(115200);  // start the serial port
+  RFduinoGZLL.channel = 4;  // use channels 2-25. 1 is same as 0 and 0-8 in normal GZLL library
+  RFduinoGZLL.begin(role);  // start the GZLL stack
+  Serial.begin(115200);     // start the serial port
   
   initBuffer();  // prime the serialBuffer
   
-  pinMode(resetPin,INPUT);  // DTR from FTDI routed to GPIO6 through switcc
+  pinMode(resetPin,INPUT);  // DTR from FTDI routed to GPIO6 through slide switch
   lastResetPinValue = digitalRead(resetPin);  // prime lastResetPinValue
   pinMode(LED,OUTPUT);    // blue LED on GPIO2
   digitalWrite(LED,HIGH); // trun on blue LED!
@@ -84,10 +84,10 @@ void loop(){
     lastResetPinValue = resetPinValue;
   }
 
-  if(serialTiming){                    // if the serial port is active
+  if(serialTiming){                   // if the serial port is active
     if(millis() - serialTimer > 2){   // check for idle time out
-      serialTiming = false;	       // clear serialTiming flag
-      if(serialIndex[0] == 2){      // single byte messages from uC are special we need to burgerize them
+      serialTiming = false;	          // clear serialTiming flag
+      if(serialIndex[0] == 2){        // single byte messages from uC are special we need to burgerize them
         testSerialByte(serialBuffer[0][1]);  // could be command to streamData, go sniff it
         serialBuffer[0][2] = serialBuffer[0][1];  // move the command byte into patty position
         serialBuffer[0][1] = serialBuffer[0][3] = '+';  // put the buns around the patty
@@ -100,18 +100,18 @@ void loop(){
     }
   }
 
-  if(streamingData && (millis() - streamingIdleTimer > 1000)){
+  if(streamingData && (millis() - streamingIdleTimer) > 2000){
       streamingData = false;
       streamToSend = false;
       radioIndex = 0;
-//      Serial.println("stream timed out");
+      Serial.println("stream timed out");
     }
 
   if(streamToSend){       // when we are streaming radio data
     Serial.write(0xA0);                // send the pre-fix
     for(int i=0; i<numBytes; i++){    
       Serial.write(radioBuffer[tail]);    // using ring buffer
-      tail++; if(tail == 300){tail = 0;}
+      tail++; if(tail == radioBuffMax){tail = 0;}
     }
       Serial.write(0xC0);              // send the post-fix
       streamToSend = false;  
@@ -157,7 +157,7 @@ void RFduinoGZLL_onReceive(device_t device, int rssi, char *data, int len){
       serialBuffCounter++;	// get ready for next buffered packet
       if(serialBuffCounter == bufferLevel +1){// when we send all the packets 
         serialToSend = false; 		    // put down bufferToSend flag
-        bufferLevel = 0;			   
+        bufferLevel = 0;			// initialize bufferLevel
         initBuffer();                           // initialize serialBuffer
       }
     }
@@ -167,13 +167,13 @@ void RFduinoGZLL_onReceive(device_t device, int rssi, char *data, int len){
     if(len > 0){ 
 
           int startIndex = 0;	        // get ready to read this packet   
-          if(packetCount == 0){	        // if this is a fresh transaction  
+      if(packetCount == 0){	// if this is the first packet in transaction  
             packetCount = data[0];	// get the number of packets to expect in message
             startIndex = 1;		// skip the first byte of the first packet when retrieving radio data
-          }		
-          for(int i = startIndex; i<len; i++){
+      }		
+      for(int i = startIndex; i < len; i++){
             radioBuffer[radioIndex] = data[i];  // retrieve the packet
-            radioIndex++; if(radioIndex == 300){radioIndex = 0;}
+            radioIndex++; if(radioIndex == radioBuffMax){radioIndex = 0;}
           }
           packetsReceived++;
           if(packetsReceived == packetCount){		// we got all the packets
