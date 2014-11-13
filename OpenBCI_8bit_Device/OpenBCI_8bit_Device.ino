@@ -1,37 +1,37 @@
-/* 
+ /* 
 
 Set's up RFduino Device for OpenBCI using RFduinoGZLL library
 
-This test behaves as a serial pass thru between two RFduinos,
-and will reset a target Arduino UNO with GPIO6 for over-air programming
+This code works as a serial pass thru between two RFduinos,
+and will reset a target ATmega328P with Arduino UNO bootloader
+with GPIO5 for over-air programming. 
 
 This code uses excessive buffering of Serial and Radio packets
 2D arrays, and ring buffers are used
-Also uses using timout to finding end of serial data package
-
-Made by Joel Murphy, Leif Percifield and Conor Russomanno Summer 2014
-Free to use and share. This code presented as-is. wysiwyg
+Also uses using timout to find end of serial data package
 
   RFduino modules should act as transparent serial pass thru for best effect.
   Host and Device use both serial and radio to accopmlish this.
     Serial RX in normal mode:
       2mS idle timeOut, 2D linear serialBuffer [20][32]
     Serial TX in streamData mode:
-      1000us idle timeOut, 2D ring serialBuffer [20][32]
+      1s idle timeOut, 2D ring serialBuffer [20][32]
     Radio RX in normal and streamingData mode:
       1st byte is packet checkSum, radioBuffer[300]
     Radio TX:
-      1st byte is packet checkSum, 2D buffer 20 x 32 bytes
+      Contents of linear buffer are sent to the serial port until radioIndex
+
     
   In streamData mode, Device uses a fixed packet size and also a time-out
   There is a chance of packet corruption in the Device serial RX:
-    If you don't use the time-out in streamData mode, the data can phase shift...
+    If you don't use the time-out in streamData, the data can shift phase.
     
   Single byte commands sent from the PC are prepared by the Host with '+' before and after.
-  This is to avoid letting the UNO get a 'ghost' command during streamData mode
+  This is to avoid letting the uC get a 'ghost' command during streamData mode
 
 Made by Joel Murphy with Leif Percifield and Conor Russomanno, Summer 2014
-Free to use and share. This code presented for use as-is. wysiwyg.
+You should have recieved a copy of the license when you downloaded from github.
+Free to use and share. This code presented for use as-is. 
 
 */
 
@@ -40,7 +40,7 @@ Free to use and share. This code presented for use as-is. wysiwyg.
 device_t role = DEVICE0;  // This is the DEVICE code
 
 const int numBuffers = 20;            // serial buffer depth
-char serialBuffer[numBuffers] [32];  	// packetize serial data for the radio
+char serialBuffer[numBuffers][32];  	// packetize serial data for the radio
 int bufferLevel = 0;                 	// counts which buffer array we are using [0...19]
 int serialIndex[numBuffers];         	// each buffer array needs a position counter
 int serialBuffCounter = 0;            // used to count Serial buffers as they go to radio
@@ -54,10 +54,10 @@ int packetCount = 0;                  // used to hold packet checkSum
 int packetsReceived = 0;              // used to count incoming packets
 boolean radioToSend = false;          // set when radio data is ready to go to serial
 
-unsigned long lastPoll;           // used to time idle message to host
+unsigned long lastPoll;         // used to time null message to host
 unsigned int pollTime = 50;       // time between polls when idling
 
-int resetPin = 5;               // GPIO5 is connected to Arduino UNO pin with 0.1uF cap in series
+int resetPin = 5;               // GPIO5 is connected to ATmega MCLR pin with 0.1uF cap in series
 
 boolean firstStreamingByte = false; // used to get the checkSum (first byte in streaming serial)
 boolean streamingData = false;      // streamingData flag
@@ -73,6 +73,7 @@ int bytesInPacket;
 
 
 void setup(){
+  RFduinoGZLL.channel = 4;     // use channels 2-25. 1 is same as 0 and 0-8 in normal GZLL library
   RFduinoGZLL.begin(role);      // start the Gazelle stack
   Serial.begin(115200,3,2);     // start the serial port, rx = GPIO3, tx = GPIO2
   
@@ -81,7 +82,7 @@ void setup(){
   lastPoll = millis();          // start Device poll timer
   
   pinMode(resetPin,OUTPUT);      // set direction of GPIO6
-  digitalWrite(resetPin,HIGH);   // take uC out of reset
+  digitalWrite(resetPin,HIGH);   // take ATmega out of reset
   
   
 }
@@ -109,10 +110,10 @@ void loop(){
     radioToSend = false;             // put down radioToSend flag
   }
     
-    if(streamingData){
-      if(millis() - streamingIdleTimer > 1000){
-        streamingData = false;
-        initBuffer();
+    if(streamingData){  // if we are streaming data
+      if(millis() - streamingIdleTimer > 1000){ // if the serial port has be idle
+        streamingData = false;  // escape from streamig data mode
+        initBuffer();   
       }
     }
   
@@ -128,7 +129,7 @@ if(Serial.available()){
   if(streamingData){    // if we are streaming data
     streamingIdleTimer = millis();
     // if the packet we were building is short by any amount
-    if(packetTiming && (micros() - packetTimer > 1000)){
+    if(packetTiming && (micros() - packetTimer) > 1000){
       firstStreamingByte = true;  // delete the lossy packet
       packetTiming = false;      // turn off the packetTimer
     }
@@ -176,10 +177,6 @@ void RFduinoGZLL_onReceive(device_t device, int rssi, char *data, int len)
       testSecondRadioByte(data[2]);    // sniff special character for uC state
     }
   }
-
-//  if(len == 2){   // single byte messages from PC is special for uC
-//      testSecondRadioByte(data[1]);    // sniff special character for uC state
-//  }
   
   if(len > 0){                    // we got a packet!!
     int startIndex = 0;	          // get ready to read this packet from 0
