@@ -6,33 +6,32 @@
  * Adjust as needed if you are testing on different hardware.
  *
  *
- * Made by Joel Murphy. Based on work by Chip Audette, Luke Travis, Conor Russomanno Summer, 2014. 
+ * Made by Joel Murphy, Luke Travis, Conor Russomanno Summer, 2014. 
  * SDcard code is based on RawWrite example in SDFat library 
- * ASCII commands are received on the serial port to configure and control the ATmega and ADS1299
+ * ASCII commands are received on the serial port to configure and control
  * Serial protocol uses '+' immediately before and after the command character
  * We call this the 'burger' protocol. the '+' re the buns. Example:
  * To begin streaming data, this code needs to see '+b+' on the serial port.
  * The included Dongle with OpenBCI_8bit_Host code is designed to insert the '+' characters.
- * Any PC or mobile device should send the command characters at 100Hz max. 
+ * Any PC or mobile device should send the command characters at 200Hz max. 
  * OpenBCI_8bit_Host will do the rest. You're welcome.
  *
- * This software is provided as-is with no promise of workability and not warranty.
- * You should have received a copy of the license when you downloaded this file. 
+ * This software is provided as-is with no promise of workability
  * Use at your own risk.
  *
  */
 
 #include <EEPROM.h>
 #include <SPI.h>
-#include <SdFat.h>   // do not use SD, use SDfat instead
+#include <SdFat.h>   // not using SD. could be an option later
 #include <SdFatUtil.h>
 #include "OpenBCI_8.h"  
 
 
 //------------------------------------------------------------------------------
-//  << SD CARD BUSINESS >>  
+//  << SD CARD BUSINESS >> has been taken out. See OBCI_SD_LOG_CMRR 
 //  SD_SS on pin 7 defined in OpenBCI library
-boolean use_SD = true;
+boolean use_SD = false;
 char fileSize = '0';  // SD file size indicator
 //------------------------------------------------------------------------------
 //  << OpenBCI BUSINESS >>
@@ -72,13 +71,14 @@ void setup(void) {
   
   delay(1000);
   Serial.print(F("OpenBCI V3 8bit Board\nSetting ADS1299 Channel Values\n"));
+  OBCI.useAccel = true;
   OBCI.initialize();  // configures channel settings on the ADS and idles the Accel
-//setup the electrode impedance detection parameters. math on the PC side calculates Z of electrode/skin contact
+//setup the electrode impedance detection parameters. math on the PC side calculates Z of electrode/skin
   OBCI.configure_Zdetect(LOFF_MAG_6NA, LOFF_FREQ_31p2HZ);   
   Serial.print(F("ADS1299 Device ID: 0x")); Serial.println(OBCI.getADS_ID(),HEX);
   Serial.print(F("LIS3DH Device ID: 0x")); Serial.println(OBCI.getAccelID(),HEX);
   Serial.print(F("Free RAM: ")); Serial.println(FreeRam()); // how much RAM?
-  sendEOT(); // "$$$" terminator
+  sendEOT();
 }
 
 
@@ -86,16 +86,19 @@ void setup(void) {
 void loop() {
     
   if(is_running){
+    
       while(!(OBCI.isDataAvailable())){}   // watch the DRDY pin
-      OBCI.updateChannelData(); // retrieve the ADS channel data 3 bytes status + 8x3 bytes data
-      if(OBCI.LIS3DH_DataAvailable()){  // if the accelerometer data has been updated
+
+      OBCI.updateChannelData(); // retrieve the ADS channel data 8x3 bytes
+      if(OBCI.LIS3DH_DataAvailable()){
         OBCI.updateAccelData();    // fresh axis data goes into the X Y Z 
-        auxAvailable = true;    // pass the dataAvailable to SDCard, if present
+        auxAvailable = true;    // pass the dataReady to SDCard, if present
       }
       if(use_SD){  
         writeDataToSDcard(sampleCounter);   // send the new data to SD card
       }
       OBCI.sendChannelData(sampleCounter);  // send the new data over radio
+      
       sampleCounter++;    // get ready for next time
   }
 
@@ -104,15 +107,15 @@ void loop() {
 
 
 // some variables to help find 'burger protocol' commands. don't laugh.
-int plusCounter = 0;  // keep track of the '+' characters we get
-char testChar;        // char of interest inbetween the '+' chars
-unsigned long commandTimer;  // used to time-out of erroneous '+' on serial
+int plusCounter = 0;
+char testChar;
+unsigned long commandTimer;
 
 void serialEvent(){
   while(Serial.available()){      
     char inChar = (char)Serial.read();  // take a gander at that!
     
-    if(plusCounter == 1){  // if we have already received the first 'bun'
+    if(plusCounter == 1){  // if we have received the first 'bun'
       testChar = inChar;   // this might be the 'patty'
       plusCounter++;       // get ready to look for another 'bun'
       commandTimer = millis();  // don't wait too long! and don't laugh!
@@ -188,11 +191,11 @@ void getCommand(char token){
         activateAllChannelsToTestCondition(ADSINPUT_TESTSIG,ADSTESTSIG_AMP_2X,ADSTESTSIG_PULSE_FAST); break;
 
 // SD CARD COMMANDS
-      case 'A': case'S': case'F': case'G': case'H': case'J': case'K': case'L':
+      case 'A': case'S': case'F': case'G': case'H': case'J': case'K': case'L': case 'a':
         use_SD = true; fileSize = token; setupSDcard(fileSize); 
         break;
       case 'j':
-        if(use_SD){  // 
+        if(use_SD){  // what are the consequenses of closing the file....?
           closeSDfile(); use_SD = false;
         }
         break;
@@ -210,6 +213,12 @@ void getCommand(char token){
         setChannelsToDefaultSetting(); break;
       case 'D':  // send the coded default channel settings to the controlling program
         sendDefaultChannelSettings(); break;  
+      case 'c':
+        // use 8 channel mode
+        break;
+      case 'C':
+        // use 16 channel mode
+        break;
         
 // LEAD OFF IMPEDANCE DETECTION COMMANDS
       case 'z':
@@ -224,10 +233,10 @@ void getCommand(char token){
 
 // STREAM DATA COMMANDS
       case 'n':  
-          // fielder's choice
+          // something useful here
         break;
-      case 'b':  
-        if(use_SD) stampSD(ACTIVATE);      // mark the SD log with millis() if it's logging
+      case 'b':
+        if(use_SD) stampSD(ACTIVATE);
         OBCI.enable_accel(RATE_25HZ);      // fire up the accelerometer
         startRunning(OUTPUT_BINARY);       // turn on the fire hose
         break;
@@ -235,13 +244,18 @@ void getCommand(char token){
         stopRunning();
         if(use_SD) stampSD(DEACTIVATE);  // mark the SD log with millis() if it's logging
         break;
-     
+     case 'v':
+       // something cool here
+       break;
 // QUERY THE ADS REGISTERS
      case '?':
        printRegisters();
        break;
        
-//       
+// OTHER COMMANDS
+     case '/':
+//       Serial.print("accel ");Serial.print(
+       break;
      default:
        break;
      }
@@ -252,6 +266,7 @@ void sendEOT(){
 }
 
 void loadChannelSettings(char c){
+//  char SRB_1;
   if(channelSettingsCounter == 0){  // if it's the first byte in this channel's array, this byte is the channel number to set
     currentChannel = c - '1'; // we just got the channel to load settings into (shift number down for array usage)
     if(!is_running) Serial.print(F("loading settings for channel ")); Serial.println(currentChannel+1,DEC);
@@ -268,7 +283,7 @@ void loadChannelSettings(char c){
   OBCI.ADSchannelSettings[currentChannel][channelSettingsCounter-1] = c;  // assign the new value to currentChannel array
   if(channelSettingsCounter-1 == SRB1_SET){
     for(int i=0; i<8; i++){
-      OBCI.ADSchannelSettings[i][SRB1_SET] = c;  // SRB1=YES connects all N inputs to SRB1, and disconnects the pin input
+      OBCI.ADSchannelSettings[i][SRB1_SET] = c;
     }
   }
   channelSettingsCounter++;
@@ -339,7 +354,7 @@ boolean startRunning(int OUT_TYPE) {
 }
 
 int changeChannelState_maintainRunningState(int chan, int start)
-{  // turn on or off a channel
+{
   boolean is_running_when_called = is_running;
   int cur_outputType = outputType;
   
@@ -360,8 +375,9 @@ int changeChannelState_maintainRunningState(int chan, int start)
   }
 }
 
+// CALLED WHEN COMMAND CHARACTER IS SEEN ON THE SERIAL PORT
 int activateAllChannelsToTestCondition(int testInputCode, byte amplitudeCode, byte freqCode)
-{  // connect all channels to internal signal defined in testInputCode
+{
   boolean is_running_when_called = is_running;
   int cur_outputType = outputType;
   
@@ -382,7 +398,7 @@ int activateAllChannelsToTestCondition(int testInputCode, byte amplitudeCode, by
 }
 
 int changeChannelLeadOffDetect_maintainRunningState()
-{  // turn on/off impedance detect signal
+{
   boolean is_running_when_called = is_running;
   int cur_outputType = outputType;
   
@@ -397,9 +413,7 @@ int changeChannelLeadOffDetect_maintainRunningState()
   }
 }
 
-void sendDefaultChannelSettings()
-{  // send controlling program current default channel settings
-   // default settings are defined in library
+void sendDefaultChannelSettings(){
   boolean is_running_when_called = is_running;
   int cur_outputType = outputType;
   
@@ -416,8 +430,14 @@ void sendDefaultChannelSettings()
 void printRegisters(){
   boolean is_running_when_called = is_running;
   int cur_outputType = outputType;
+  
+  //must stop running to change channel settings
   stopRunning();
-  OBCI.printAllRegisters();
+  
+  if(is_running == false){
+    // print the ADS and LIS3DH registers
+    OBCI.printAllRegisters();
+  }
   sendEOT();
   delay(20);
     //restart, if it was running before

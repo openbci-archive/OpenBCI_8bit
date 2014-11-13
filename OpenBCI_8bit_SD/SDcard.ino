@@ -2,18 +2,17 @@
 //  << SD CARD BUSINESS >>
 //  SD_SS on pin 7 defined in OpenBCI library
 //  bytes per block = 2 samplCounter+comma, 8*3+8*comma, 3*2 aux + comma
-//  blocks per second at 250Hz sample rate = ~36
 
 /*  Max time  numBlocks_8chan      numBlocks_8chan/aux
-Min	Sec	#samples	bytes/sample	samples/block	#blocks	        TIME	 #blocks allocated      fileSize
-5	300	75000	              74	 6.918918919	10839.84375	5min	  11000                   5.6Mb
-15	900	225000	              74	 6.918918919	32519.53125	15min	  33000                  16.9Mb
-30	1800	450000	              74	 6.918918919	65039.0625	30min	  66000                  33.8Mb
-60	3600	900000	              74	 6.918918919	130078.125	1hr	  131000                 67.1Mb
-120	7200	1800000	              74	 6.918918919	260156.25	2hr	  261000                133.6Mb
-240	14400	3600000	              74	 6.918918919	520312.5	4hr	  521000                266.7Mb
-720	43200	10800000	      74	 6.918918919	1560937.5	12hr	  1561000               799.2Mb
-1440	86400	21600000	      74	 6.918918919	3121875	        24hr	  3122000              1598.5Mb
+Min	Sec	#samples	bytes/sample	samples/block	#blocks	        TIME	 #blocks allocated
+5	300	75000	              74	 6.918918919	10839.84375	5min	  11000
+15	900	225000	              74	 6.918918919	32519.53125	15min	  33000
+30	1800	450000	              74	 6.918918919	65039.0625	30min	  66000
+60	3600	900000	              74	 6.918918919	130078.125	1hr	  131000
+120	7200	1800000	              74	 6.918918919	260156.25	2hr	  261000
+240	14400	3600000	              74	 6.918918919	520312.5	4hr	  521000
+720	43200	10800000	      74	 6.918918919	1560937.5	12hr	  1561000
+1440	86400	21600000	      74	 6.918918919	3121875	        24hr	  3122000
     
 */
 
@@ -28,13 +27,14 @@ Min	Sec	#samples	bytes/sample	samples/block	#blocks	        TIME	 #blocks alloca
 #define BLOCK_12HR  1561000
 #define BLOCK_24HR  3122000
 
-uint32_t BLOCK_COUNT;  // number of 512 byte blocks to allocate  
+uint32_t BLOCK_COUNT;
+// time to produce a block of data not critical. used for benchmarking only
 const uint32_t MICROS_PER_BLOCK = 2000; // minimum time that won't trigger overrun error
 SdFat sd; // file system
 SdFile file; // test file
 uint32_t bgnBlock, endBlock; // file extent
 #define error(s) sd.errorHalt_P(PSTR(s)) // store error strings in flash to save RAM
-uint32_t b = 0;   // used to count blocks
+uint32_t b = 0;  // used to count blocks
 uint8_t* pCache;  // used to cache the data before writing to SD
 // benchmark stats
   uint16_t overruns = 0;
@@ -49,9 +49,11 @@ struct {
 } over[OVER_DIM];
 
 int byteCounter = 0;     // used to hold position in cache
+boolean logging = false;
+//unsigned int timeBetweenFiles;
+//boolean betweenFiles = false;
 byte fileTens, fileOnes;  // enumerate succesive files on card and store number in EEPROM 
-char currentFileName[] = "OBCI_00.TXT";  // file name will count from '00' to 'FF' and roll over to '00' again
-// prepare to write footer when fileClose is called. This contains block overrun data and total time data
+char currentFileName[] = "OBCI_00.TXT";
 prog_char elapsedTime[] PROGMEM = {"\n%Total time mS:\n"};  // 17
 prog_char minTime[] PROGMEM = {"%min Write time uS:\n"};  // 20
 prog_char maxTime[] PROGMEM = {"%max Write time uS:\n"};  // 20
@@ -63,10 +65,11 @@ prog_char startStamp[] PROGMEM = {"%START AT\n"};    // used to stamp SD record 
 
 
 void writeDataToSDcard(byte sampleCount){ 
+// convert 8 bit sampleCounter into HEX. 0000|0000 
   boolean addComma = true;
-  // convert 8 bit sampleCounter into HEX
-  convertToHex(long(sampleCount), 1, addComma);         
-  // convert 24 bit channelData into HEX
+  convertToHex(long(sampleCount), 1, addComma);
+         
+  // convert 24 bit channelData into HEX. 0000|0000 0000|0000 0000|0000
   for (int currentChannel = 0; currentChannel < 8; currentChannel++){
     convertToHex(OBCI.ads.channelData[currentChannel], 5, addComma);
     if(currentChannel == 6 && !auxAvailable) addComma = false;  // format CSV
@@ -84,17 +87,21 @@ void writeDataToSDcard(byte sampleCount){
 }
 
 void overRun(){
+    // write the 512 byte block
     byteCounter = 0; // reset 512 byte counter
     uint32_t tw = micros();  // time the write
-    if (!sd.card()->writeData(pCache)){   // write the 512 byte block
+    if (!sd.card()->writeData(pCache)){ 
 //      Serial.print(F("writeData failed")); 
 //      Serial.println(b);
       b = b-1;  //should be b-=1?
     }
     tw = micros() - tw;
-    if (tw > maxWriteTime) {maxWriteTime = tw;}  // check for max write time
-    if (tw < minWriteTime){minWriteTime = tw;}  // check for min write time
-    if (tw > MICROS_PER_BLOCK) {  // check for overrun
+    // check for max write time
+    if (tw > maxWriteTime) {maxWriteTime = tw;}
+    // check for min write time
+    if (tw < minWriteTime){minWriteTime = tw;}
+    // check for overrun
+    if (tw > MICROS_PER_BLOCK) {
       if (overruns < OVER_DIM) {
         over[overruns].block = b;
         over[overruns].micro = tw;
@@ -103,20 +110,21 @@ void overRun(){
     }
     
     b++;    // increment BLOCK counter
-    if(b == BLOCK_COUNT-1){  // if it's the next to last allocated block
+    if(b == BLOCK_COUNT-1){
       t = millis() - t;  // measure total write time
-      stopRunning();  // turn off the data feed
-      writeFooter();  // add write time and overrun data to the file
+      stopRunning();
+      writeFooter();
     }
-    if(b == BLOCK_COUNT){  // if it's the last allocated block
-      delay(2000);    // wait for the time it takes radios to time out of streaming data mode
-      closeSDfile();  // close the SD file
+    if(b == BLOCK_COUNT){
+      delay(2000);
+      closeSDfile();  
     }  // we did it!
 }
 
 void setupSDcard(char limit){
   // use limit to determine file size
   switch(limit){
+    case 'a': BLOCK_COUNT = 512; break;
     case 'A': BLOCK_COUNT = BLOCK_5MIN; break;
     case 'S': BLOCK_COUNT = BLOCK_15MIN; break;
     case 'F': BLOCK_COUNT = BLOCK_30MIN; break;
@@ -127,7 +135,7 @@ void setupSDcard(char limit){
     case 'L': BLOCK_COUNT = BLOCK_24HR; break;
     default: return; break;
   }
-  incrementFileCounter();    // update the file name from EEPROM
+  incrementFileCounter();
   while (!sd.begin(SD_SS, SPI_FULL_SPEED)){ 
     Serial.println(F("SD begin fail... Card Insterted?"));
     sd.begin(SD_SS, SPI_FULL_SPEED);
@@ -152,16 +160,16 @@ void setupSDcard(char limit){
   }
   
   // initialize benchmark stats for write time test
-    overruns = 0;          // number of overruns
-    maxWriteTime = 0;      // longest block write time
+    overruns = 0;  // number of overruns
+    maxWriteTime = 0;  // longest block write time
     minWriteTime = 65000;  // shortest block write time
-    b = 0;                 // block counter
-    t = millis();          // note the time to measure total time
+    b = 0;   // block counter
+    t = millis();  // note the time to measure total time
     byteCounter = 0;
 }
 
 void writeFooter(){
-  for(int i=0; i<17; i++){ 
+  for(int i=0; i<17; i++){
       pCache[byteCounter] = pgm_read_byte_near(elapsedTime+i);
       byteCounter++;
       if(byteCounter == 512){
@@ -210,7 +218,7 @@ void writeFooter(){
       convertToHex(over[i].micro, 7, false);
     } 
   }
-  overRun();  // go write the footer to the SD file
+  overRun();
 } 
   
 void closeSDfile(){
@@ -250,7 +258,7 @@ void incrementFileCounter(){
 
 void stampSD(boolean state){
   unsigned long t = millis();
-  if(state){  // make note of machine millis() at any acquisition start
+  if(state){
     for(int i=0; i<10; i++){
       pCache[byteCounter] = pgm_read_byte_near(startStamp+i);
       byteCounter++;
@@ -258,7 +266,7 @@ void stampSD(boolean state){
         overRun();
       }
     }
-  }else{      // make note of machine millis() at any acquisition stop
+  }else{
     for(int i=0; i<9; i++){
       pCache[byteCounter] = pgm_read_byte_near(stopStamp+i);
       byteCounter++;
@@ -270,13 +278,12 @@ void stampSD(boolean state){
   convertToHex(t, 7, false);
 }
 
-unsigned long getFileSize(){ // returns blockCount in Mbytes
-  unsigned long numBytes = BLOCK_COUNT*512;
-  return numBytes;  
+unsigned int numKblocks(){
+  return BLOCK_COUNT/1000;
 }
 
 void convertToHex(long rawData, int numNibbles, boolean addComma){
-// convert byte value to hex for SD card storage
+
     for (int currentNibble = numNibbles; currentNibble >= 0; currentNibble--){
       byte nibble = (rawData >> currentNibble*4) & 0x0F;
       if (nibble > 9){
