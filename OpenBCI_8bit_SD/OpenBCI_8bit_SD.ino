@@ -213,12 +213,6 @@ void getCommand(char token){
         setChannelsToDefaultSetting(); break;
       case 'D':  // send the coded default channel settings to the controlling program
         sendDefaultChannelSettings(); break;  
-      case 'c':
-        // use 8 channel mode
-        break;
-      case 'C':
-        // use 16 channel mode
-        break;
         
 // LEAD OFF IMPEDANCE DETECTION COMMANDS
       case 'z':
