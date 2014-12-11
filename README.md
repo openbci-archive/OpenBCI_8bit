@@ -1,6 +1,6 @@
 Firmware for OpenBCI 8bit system
 =================
-CONTENTS:
+
   OpenBCI_8bit_Device
     Device code for the OpenBCI Board mounted RFduino
   OpenBCI_8bit_Host
