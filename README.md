@@ -12,8 +12,7 @@ Install in your documents/arduino/libraries folder
 RFduino hardware libraries with custom OpenBCI support
 Install according to RFduino instructions           https://github.com/OpenBCI/OpenBCI_8bit/blob/master/OpenBCI_8bit_RFduino_Library/RFduino/README.md    
 **OpenBCI_8bit_SD**
-Upload to OpenBCI 8bit Board
-Install in your documents/arduino folder    
+Arduino code for the OpenBCI 8bit Board 
 **OpenBCI_8bit_SDfat_Library/SdFat**
 Install in your documents/arduino/libraries folder    
     
