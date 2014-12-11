@@ -1,5 +1,22 @@
 Firmware for OpenBCI 8bit system
 =================
+CONTENTS:
+  OpenBCI_8bit_Device
+    Device code for the OpenBCI Board mounted RFduino
+  OpenBCI_8bit_Host
+    Host code for the OpenBCI Dongle mounted RFduino
+  OpenBCI_8bit_Library/OpenBCI_8
+    OpenBCI library for 8bit board
+    Install in your documents/arduino/libraries folder
+  OpenBCI_8bit_RFduino_Library/RFduino
+    RFduino hardware libraries with custom OpenBCI support
+    Install according to RFduino instructions           https://github.com/OpenBCI/OpenBCI_8bit/blob/master/OpenBCI_8bit_RFduino_Library/RFduino/README.md
+  OpenBCI_8bit_SD
+    Upload to OpenBCI 8bit Board
+    Install in your documents/arduino folder 
+  OpenBCI_8bit_SDfat_Library/SdFat
+    Install in your documents/arduino/libraries folder
+    
 
 The OpenBCI 8bit system is an open-source biopotential acquisisiton system. It incorporates an ADS1299 (analog to digital converter IC), LIS3DH (tripple axis accelerometer), Micro SD card, RFduino radio module, and an ATmega328 with Arduino UNO bootloader. The Device code is for the OpenBCI Board Radio Module, and the Host code is for the OpenBCI Dongle Radio Module. 
 Using the OpenBCI USB Dongle, it is possible to upload the OpenBCI_8bit_streamData_Filter to the target ATmega on the OpenBCI 8bit board. This version implements an optional high pass and 60Hz notch filter using a modified biquad library included.
