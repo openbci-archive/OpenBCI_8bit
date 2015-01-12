@@ -16,6 +16,7 @@ Min	Sec	#samples	bytes/sample	samples/block	#blocks	        TIME	 #blocks alloca
     
 */
 
+#define __PROG_TYPES_COMPAT__
 #include <avr/pgmspace.h>
 
 #define BLOCK_5MIN  11000
@@ -54,14 +55,14 @@ boolean logging = false;
 //boolean betweenFiles = false;
 byte fileTens, fileOnes;  // enumerate succesive files on card and store number in EEPROM 
 char currentFileName[] = "OBCI_00.TXT";
-prog_char elapsedTime[] PROGMEM = {"\n%Total time mS:\n"};  // 17
-prog_char minTime[] PROGMEM = {"%min Write time uS:\n"};  // 20
-prog_char maxTime[] PROGMEM = {"%max Write time uS:\n"};  // 20
-prog_char overNum[] PROGMEM = {"%Over:\n"};              //  7
-prog_char blockTime[] PROGMEM = {"%block, uS\n"};          // 11    74 chars + 2 32(16) + 2 16(8) = 98 + (n 32x2) up to 24 overruns...
+const prog_char elapsedTime[] PROGMEM = {"\n%Total time mS:\n"};  // 17
+const prog_char minTime[] PROGMEM = {"%min Write time uS:\n"};  // 20
+const prog_char maxTime[] PROGMEM = {"%max Write time uS:\n"};  // 20
+const prog_char overNum[] PROGMEM = {"%Over:\n"};              //  7
+const prog_char blockTime[] PROGMEM = {"%block, uS\n"};          // 11    74 chars + 2 32(16) + 2 16(8) = 98 + (n 32x2) up to 24 overruns...
 
-prog_char stopStamp[] PROGMEM = {"%STOP AT\n"};      // used to stamp SD record when stopped by PC
-prog_char startStamp[] PROGMEM = {"%START AT\n"};    // used to stamp SD record when started by PC
+const prog_char stopStamp[] PROGMEM = {"%STOP AT\n"};      // used to stamp SD record when stopped by PC
+const prog_char startStamp[] PROGMEM = {"%START AT\n"};    // used to stamp SD record when started by PC
 
 
 void writeDataToSDcard(byte sampleCount){ 
