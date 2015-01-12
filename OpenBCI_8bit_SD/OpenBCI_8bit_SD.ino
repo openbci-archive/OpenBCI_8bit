@@ -21,6 +21,8 @@
  *
  */
 
+#define __PROG_TYPES_COMPAT__
+
 #include <EEPROM.h>
 #include <SPI.h>
 #include <SdFat.h>   // not using SD. could be an option later
