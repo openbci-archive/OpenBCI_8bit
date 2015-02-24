@@ -3,8 +3,9 @@
 //  SD_SS on pin 7 defined in OpenBCI library
 //  bytes per block = 2 samplCounter+comma, 8*3+8*comma, 3*2 aux + comma
 
-/*  Max time  numBlocks_8chan      numBlocks_8chan/aux
-Min	Sec	#samples	bytes/sample	samples/block	#blocks	        TIME	 #blocks allocated
+/* 
+Max time expecting Accel/Aux included in each sample
+Min	Sec	#samples	bytes/sample	samples/block	#blocks	req     TIME	 #blocks allocated
 5	300	75000	              74	 6.918918919	10839.84375	5min	  11000
 15	900	225000	              74	 6.918918919	32519.53125	15min	  33000
 30	1800	450000	              74	 6.918918919	65039.0625	30min	  66000
@@ -54,14 +55,14 @@ boolean logging = false;
 //boolean betweenFiles = false;
 byte fileTens, fileOnes;  // enumerate succesive files on card and store number in EEPROM 
 char currentFileName[] = "OBCI_00.TXT";
-prog_char elapsedTime[] PROGMEM = {"\n%Total time mS:\n"};  // 17
-prog_char minTime[] PROGMEM = {"%min Write time uS:\n"};  // 20
-prog_char maxTime[] PROGMEM = {"%max Write time uS:\n"};  // 20
-prog_char overNum[] PROGMEM = {"%Over:\n"};              //  7
-prog_char blockTime[] PROGMEM = {"%block, uS\n"};          // 11    74 chars + 2 32(16) + 2 16(8) = 98 + (n 32x2) up to 24 overruns...
+const char elapsedTime[] PROGMEM = {"\n%Total time mS:\n"};  // 17
+const char minTime[] PROGMEM = {"%min Write time uS:\n"};  // 20
+const char maxTime[] PROGMEM = {"%max Write time uS:\n"};  // 20
+const char overNum[] PROGMEM = {"%Over:\n"};              //  7
+const char blockTime[] PROGMEM = {"%block, uS\n"};          // 11    74 chars + 2 32(16) + 2 16(8) = 98 + (n 32x2) up to 24 overruns...
 
-prog_char stopStamp[] PROGMEM = {"%STOP AT\n"};      // used to stamp SD record when stopped by PC
-prog_char startStamp[] PROGMEM = {"%START AT\n"};    // used to stamp SD record when started by PC
+const char stopStamp[] PROGMEM = {"%STOP AT\n"};      // used to stamp SD record when stopped by PC
+const char startStamp[] PROGMEM = {"%START AT\n"};    // used to stamp SD record when started by PC
 
 
 void writeDataToSDcard(byte sampleCount){ 
@@ -124,7 +125,7 @@ void overRun(){
 void setupSDcard(char limit){
   // use limit to determine file size
   switch(limit){
-    case 'a': BLOCK_COUNT = 512; break;
+    case 'a': BLOCK_COUNT = 512; break;  // about 14 seconds
     case 'A': BLOCK_COUNT = BLOCK_5MIN; break;
     case 'S': BLOCK_COUNT = BLOCK_15MIN; break;
     case 'F': BLOCK_COUNT = BLOCK_30MIN; break;
@@ -172,44 +173,44 @@ void writeFooter(){
   for(int i=0; i<17; i++){
       pCache[byteCounter] = pgm_read_byte_near(elapsedTime+i);
       byteCounter++;
-      if(byteCounter == 512){
-        overRun();
-      }
+      // if(byteCounter == 512){
+      //   overRun();
+      // }
     }
   convertToHex(t, 7, false);
   
   for(int i=0; i<20; i++){
     pCache[byteCounter] = pgm_read_byte_near(minTime+i);
     byteCounter++;
-    if(byteCounter == 512){
-      overRun();
-    }
+    // if(byteCounter == 512){
+    //   overRun();
+    // }
   }
   convertToHex(minWriteTime, 7, false);
   
   for(int i=0; i<20; i++){
       pCache[byteCounter] = pgm_read_byte_near(maxTime+i);
       byteCounter++;
-      if(byteCounter == 512){
-        overRun();
-      }
+      // if(byteCounter == 512){
+      //   overRun();
+      // }
     }
   convertToHex(maxWriteTime, 5, false);
   
   for(int i=0; i<7; i++){
       pCache[byteCounter] = pgm_read_byte_near(overNum+i);
       byteCounter++;
-      if(byteCounter == 512){
-        overRun();
-      }
+      // if(byteCounter == 512){
+      //   overRun();
+      // }
     }
   convertToHex(overruns, 5, false);
   for(int i=0; i<11; i++){
       pCache[byteCounter] = pgm_read_byte_near(blockTime+i);
       byteCounter++;
-      if(byteCounter == 512){
-        overRun();
-      }
+      // if(byteCounter == 512){
+      //   overRun();
+      // }
     }
   if (overruns) {
     uint8_t n = overruns > OVER_DIM ? OVER_DIM : overruns;

@@ -19,7 +19,7 @@
  * This software is provided as-is with no promise of workability
  * Use at your own risk.
  *
- */
+ */ 
 
 #include <EEPROM.h>
 #include <SPI.h>
@@ -213,6 +213,12 @@ void getCommand(char token){
         setChannelsToDefaultSetting(); break;
       case 'D':  // send the coded default channel settings to the controlling program
         sendDefaultChannelSettings(); break;  
+      case 'c':
+        // use 8 channel mode
+        break;
+      case 'C':
+        // use 16 channel mode
+        break;
         
 // LEAD OFF IMPEDANCE DETECTION COMMANDS
       case 'z':
@@ -248,7 +254,7 @@ void getCommand(char token){
        
 // OTHER COMMANDS
      case '/':
-//       Serial.print("accel ");Serial.print(
+//       something cool here
        break;
      default:
        break;
