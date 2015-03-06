@@ -73,18 +73,34 @@ void writeDataToSDcard(byte sampleCount){
   // convert 24 bit channelData into HEX. 0000|0000 0000|0000 0000|0000
   for (int currentChannel = 0; currentChannel < 8; currentChannel++){
     convertToHex(OBCI.ads.channelData[currentChannel], 5, addComma);
-    if(currentChannel == 6 && !auxAvailable) addComma = false;  // format CSV
+    if(currentChannel == 6){
+      addComma = false;
+      if(accelAvailable) {addComma = true;}  // format CSV
+      if(OBCI.useAux) {addComma = true;}
+    }
   }
-      
-  if(auxAvailable == true){  // if we have accelerometer data to log
+       
+  if(accelAvailable == true){  // if we have accelerometer data to log
     // convert 16 bit accelerometer data into HEX 0000|0000 0000|0000  
     for (int currentChannel = 0; currentChannel < 3; currentChannel++){
       convertToHex(long(OBCI.accel.axisData[currentChannel]), 3, addComma);
-      if(currentChannel == 1) addComma = false;
+      if(currentChannel == 1){
+        addComma = false;
+        if(OBCI.useAux) {addComma = true;}
+      }
     }
-    auxAvailable = false;  // reset accelerometer data flag
+    accelAvailable = false;  // reset accelerometer data flag
   }// end of accelerometer data log
       
+  if(OBCI.useAux == true){  // if we have accelerometer data to log
+    // convert 16 bit accelerometer data into HEX 0000|0000 0000|0000  
+    for (int currentChannel = 0; currentChannel < 3; currentChannel++){
+      convertToHex(long(OBCI.auxData[currentChannel]), 3, addComma);
+      if(currentChannel == 1) addComma = false;
+    }
+//    OBCI.useAux = false;  // reset in library
+  }// end of aux data log  
+  
 }
 
 void overRun(){
