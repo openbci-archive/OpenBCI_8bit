@@ -23,9 +23,12 @@ class OpenBCI {
     char ADSleadOffSettings[8][2];
     boolean useAccel;
     int outputType;  // we have a few output types
+    int auxData[3];
+    boolean useAux;
 
     // BOARD WIDE FUNCTIONS
     void initialize(void);
+    void initialize(byte);
     void updateChannelSettings(void);
     void writeChannelSettings(void);
     void setChannelsToDefault(void);
@@ -35,6 +38,7 @@ class OpenBCI {
     void reportDefaultChannelSettings(void);
     void startStreaming(void);
     void stopStreaming(void);
+    void writeAuxData(void);
 
     //  ADS1299 FUNCITONS
     void initialize_ads(void);

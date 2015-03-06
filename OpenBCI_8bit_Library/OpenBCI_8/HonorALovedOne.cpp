@@ -1,13 +1,10 @@
 
-
 //==========================================================//
 //     OpenBCI Kickstarter Pledge - Honor A Loved One       //
 //==========================================================//
 
 /*
-
 Name Of Loved One To Be Honored -- Note About Honored Loved One
-
 Sebi Kravitz -- Super cheerful child, autistic
 Emir Emrah Uckan -- :)
 Peter A. Newman	-- So the body will give way for the mind.
@@ -58,5 +55,4 @@ All creative people -- All creative people who aren't accommodated in standard E
 Jessie VB Warms -- A cancer researcher who lost her keen mind and soul to Alzheimer's. We miss you.
 Trond Brox BjÃ¸rvik -- An extremely intelligent individual that due to a debilitating brain disease suffered for 8 years, never to make his major impact in this world.
 Carillon Leader -- My amazing grandmother, who loved her grandchildren more than anything in the world. Thank you for everything. You inspired me as a teacher, philanthropist, and lover of people. I hope to inspire others as you have me.
-
 */

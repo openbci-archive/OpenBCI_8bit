@@ -52,6 +52,7 @@ public:
     boolean useSRB2[8];          // used to remember if we were included in SRB2 before channel power down
     char leadOffSettings[8][2];  // used to control on/off of impedance measure for P and N side of each channel
     boolean verbosity;		 // turn on/off Serial feedback
+    
 	
     void resetADS(void);                      //reset all the ADS1299's settings.  Call however you'd like
     void startADS(void);

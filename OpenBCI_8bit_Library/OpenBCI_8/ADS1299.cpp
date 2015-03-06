@@ -31,9 +31,10 @@
     }
     for(int i=0; i<8; i++){
       useInBias[i] = true;    // keeping track of inputs used for Bias Generation
-      useSRB2[i] = true;
-      useSRB1 = false;
+      useSRB2[i] = true;      // keeping track of inputs using SRB2
     }
+      useSRB1 = false;
+      
     writeChannelSettings();
     WREG(CONFIG3,0b11101100); delay(1);  // enable internal reference drive and etc.
     for(int i=0; i<8; i++){  // turn off the impedance measure signal
