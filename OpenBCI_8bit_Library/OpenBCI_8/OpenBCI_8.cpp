@@ -8,6 +8,12 @@ void OpenBCI::initialize(void){
   initialize_accel(SCALE_4G);
 }
 
+void OpenBCI::initialize(byte G){
+  pinMode(SD_SS,OUTPUT); digitalWrite(SD_SS,HIGH);  // de-select the SD card if it's there
+  initialize_ads();
+  initialize_accel(G);
+}
+
 void OpenBCI::initialize_ads(void) {
   ads.initialize();  
   for(int i=0; i<8; i++){
@@ -82,6 +88,12 @@ void OpenBCI::setChannelsToDefault(void){
     }
   }
   updateADSchannelSettings();
+  
+  for(int i=0; i<8; i++){
+    ads.leadOffSettings[i][0] = ADSleadOffSettings[i][0] = OFF;
+    ads.leadOffSettings[i][1] = ADSleadOffSettings[i][1] = OFF; 
+  }
+  ads.changeChannelLeadOffDetection();
 }
 
 void OpenBCI::setChannelsToEMG(void){
@@ -174,7 +186,20 @@ void OpenBCI::updateChannelData(void){
 void OpenBCI::sendChannelData(byte sampleNumber){
   Serial.write(sampleNumber); // 1 byte
   ads.writeADSchannelData();  // 24 bytes
-  accel.writeLIS3DHdata();    // 6 bytes
+  if(useAux){ 
+    writeAuxData();            // 3 16bit shorts
+    useAux = false;
+  }else{
+    accel.writeLIS3DHdata();    // 6 bytes
+  }
+}
+
+void OpenBCI::writeAuxData(){
+  for(int i=0; i<3; i++){
+    Serial.write(highByte(auxData[i])); // write 16 bit axis data MSB first
+    Serial.write(lowByte(auxData[i]));  // axisData is array of type short (16bit)
+    auxData[i] = 0;   // reset auxData bytes to 0
+  }
 }
 
 long OpenBCI::getChannel(int chan){
@@ -215,4 +240,3 @@ void OpenBCI::configureInternalTestSignal(byte amplitudeCode, byte freqCode)
 {
   ads.configureInternalTestSignal(amplitudeCode, freqCode);
 }
-
