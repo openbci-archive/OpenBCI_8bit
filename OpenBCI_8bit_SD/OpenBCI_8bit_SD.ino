@@ -57,8 +57,12 @@ int outputType;
 volatile boolean auxAvailable = false;
 boolean useAccelOnly = false;
 //------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-  
+//  << Auxiliary Data Business >>
+//  useAux boolean in library used to send aux bytes with data stream
+//  call it by saying OBCI.useAux = true/false
+  int pushButton = A0;
+	int pushButtonValue;
+	int lastPushButtonValue;
 //------------------------------------------------------------------------------
 
 void setup(void) {
@@ -79,6 +83,11 @@ void setup(void) {
   Serial.print(F("LIS3DH Device ID: 0x")); Serial.println(OBCI.getAccelID(),HEX);
   Serial.print(F("Free RAM: ")); Serial.println(FreeRam()); // how much RAM?
   sendEOT();
+  
+  pinMode(pushButton,INPUT);
+  pushButtonValue = 0; 
+  lastPushButtonValue = 0;
+  
 }
 
 
@@ -101,6 +110,16 @@ void loop() {
       
       sampleCounter++;    // get ready for next time
   }
+  
+    pushButtonValue = digitalRead(pushButton);    // feel the pushbutton
+    if (pushButtonValue != lastPushButtonValue){  // if it's changed,
+      if (pushButtonValue == HIGH){    // if it's gone from LOW to HIGH
+        // 0x6220 converts to 3.14 in Processing
+        OBCI.auxData[0] = OBCI.auxData[1] = OBCI.auxData[2] = 0x6220;	 
+        OBCI.useAux = true;	         // set the OBCI.auxData flag
+      }
+      lastPushButtonValue = pushButtonValue; // keep track of the changes
+    }
 
 } // end of loop
 
