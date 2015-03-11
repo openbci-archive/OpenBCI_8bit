@@ -19,6 +19,14 @@
  * This software is provided as-is with no promise of workability
  * Use at your own risk.
  *
+ *  MODIFIED to control a tone output to an 8ohm speaker
+ *  Connect speaker to pin A0
+ *  See the pitches.h tab for built in tones
+ *
+ *
+ *
+ *
+ *
  */ 
 
 #include <EEPROM.h>
@@ -26,7 +34,7 @@
 #include <SdFat.h>   // not using SD. could be an option later
 #include <SdFatUtil.h>
 #include "OpenBCI_8.h"  
-
+#include "pitches.h"
 
 //------------------------------------------------------------------------------
 //  << SD CARD BUSINESS >> has been taken out. See OBCI_SD_LOG_CMRR 
@@ -57,6 +65,9 @@ int outputType;
 volatile boolean auxAvailable = false;
 boolean useAccelOnly = false;
 //------------------------------------------------------------------------------
+//  << TONE Business >>
+int Speaker = A0;  // alias for pin A0
+unsigned long toneStartTimer = 0;
 //------------------------------------------------------------------------------
   
 //------------------------------------------------------------------------------
@@ -68,7 +79,7 @@ void setup(void) {
   
   SPI.begin();
   SPI.setClockDivider(SPI_CLOCK_DIV2);
-  
+  pinMode(Speaker,OUTPUT);
   delay(1000);
   Serial.print(F("OpenBCI V3 8bit Board\nSetting ADS1299 Channel Values\n"));
   OBCI.useAccel = true;
@@ -100,6 +111,11 @@ void loop() {
       OBCI.sendChannelData(sampleCounter);  // send the new data over radio
       
       sampleCounter++;    // get ready for next time
+      
+      toneStartTimer++;
+      if(toneStartTimer%250 == 0){  // tone happens this number times 4
+        tone(Speaker,NOTE_B3,200);  // make a boop that lasts for 0.2 Seconds
+      }
   }
 
 } // end of loop
