@@ -19,6 +19,16 @@
  * This software is provided as-is with no promise of workability
  * Use at your own risk.
  *
+ *
+ *  MODIFICATION OF OpenBCI_8bit_SD
+ *  The plan is to output signals to two LEDs 
+ *  So that they flash at different frequencies
+ *
+ *
+ *
+ *
+ *
+ *
  */ 
 
 #include <EEPROM.h>
