@@ -98,9 +98,9 @@ void setup(void) {
   sendEOT();
   
   // flashing LEDs at different frequencies. Period needs clean /4 to work!
-  pinMode(GRN,OUTPUT);  // flash at 5Hz | 200mS period | switch state every 25 samples
-  pinMode(RED,OUTPUT);  // flash at ~7Hz | 136mS period | switch state every 17 samples
-  REDstate = GRNstate = true;
+  pinMode(GRN,OUTPUT);  // flash at 5Hz | 200mS period | switch pin state every 25 samples
+  pinMode(RED,OUTPUT);  // flash at ~7Hz | 136mS period | switch pin state every 17 samples
+  REDstate = GRNstate = true; // start with the lights on
   digitalWrite(GRN,GRNstate);
   digitalWrite(RED,REDstate);
 }
@@ -281,7 +281,7 @@ void getCommand(char token){
         stopRunning();
         if(use_SD) stampSD(DEACTIVATE);  // mark the SD log with millis() if it's logging
         GRNstate = REDstate = true;
-        digitalWrite(GRN,GRNstate);
+        digitalWrite(GRN,GRNstate); // keep the lights on!
         digitalWrite(RED,REDstate);
         break;
      case 'v':
