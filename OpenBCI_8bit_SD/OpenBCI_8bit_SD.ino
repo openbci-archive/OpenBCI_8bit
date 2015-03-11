@@ -67,6 +67,13 @@ int outputType;
 volatile boolean auxAvailable = false;
 boolean useAccelOnly = false;
 //------------------------------------------------------------------------------
+//  << LED Flashing Business
+// Two LEDs with 220ohm series resistors
+int GRN = A0;
+int RED = A1;
+int mod;
+boolean REDstate, GRNstate;
+unsigned long flashCounter = 0;
 //------------------------------------------------------------------------------
   
 //------------------------------------------------------------------------------
@@ -89,6 +96,13 @@ void setup(void) {
   Serial.print(F("LIS3DH Device ID: 0x")); Serial.println(OBCI.getAccelID(),HEX);
   Serial.print(F("Free RAM: ")); Serial.println(FreeRam()); // how much RAM?
   sendEOT();
+  
+  // flashing LEDs at different frequencies. Period needs clean /4 to work!
+  pinMode(GRN,OUTPUT);  // flash at 5Hz | 200mS period | switch state every 25 samples
+  pinMode(RED,OUTPUT);  // flash at ~7Hz | 136mS period | switch state every 17 samples
+  REDstate = GRNstate = true;
+  digitalWrite(GRN,GRNstate);
+  digitalWrite(RED,REDstate);
 }
 
 
@@ -110,6 +124,19 @@ void loop() {
       OBCI.sendChannelData(sampleCounter);  // send the new data over radio
       
       sampleCounter++;    // get ready for next time
+      
+      flashCounter++;
+      
+      if (flashCounter%25 == 0){
+        GRNstate = !GRNstate;
+        digitalWrite(GRN,GRNstate);
+      }
+      
+      if (flashCounter%17 == 0){
+        REDstate = !REDstate;
+        digitalWrite(RED,REDstate);
+      }
+      
   }
 
 } // end of loop
@@ -253,6 +280,9 @@ void getCommand(char token){
      case 's':
         stopRunning();
         if(use_SD) stampSD(DEACTIVATE);  // mark the SD log with millis() if it's logging
+        GRNstate = REDstate = true;
+        digitalWrite(GRN,GRNstate);
+        digitalWrite(RED,REDstate);
         break;
      case 'v':
        // something cool here
