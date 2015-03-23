@@ -108,14 +108,20 @@ void loop() {
       if(use_SD){  
         writeDataToSDcard(sampleCounter);   // send the new data to SD card
       }
+      
+      toneStartTimer++;
+      if(toneStartTimer%250 == 0){  // tone happens every this number of mS times 4
+        tone(Speaker,NOTE_B3,200);  // make a boop that lasts for 0.2 Seconds
+        // 0x6220 converts to 3.14 in Processing. This is a flag in the data timed with the boop
+        OBCI.auxData[0] = OBCI.auxData[1] = OBCI.auxData[2] = 0x6220;	 
+        OBCI.useAux = true;	         // set the OBCI.auxData flag
+      }
+      
       OBCI.sendChannelData(sampleCounter);  // send the new data over radio
       
       sampleCounter++;    // get ready for next time
       
-      toneStartTimer++;
-      if(toneStartTimer%250 == 0){  // tone happens this number times 4
-        tone(Speaker,NOTE_B3,200);  // make a boop that lasts for 0.2 Seconds
-      }
+      
   }
 
 } // end of loop
