@@ -23,10 +23,10 @@
  *  MODIFICATION OF OpenBCI_8bit_SD
  *  The plan is to output signals to two LEDs 
  *  So that they flash at different frequencies
- *
- *
- *
- *
+ *  To do this, we will use the sampleCounter variable to time the LED frequency
+ *  sampleCounter increments every 4mS, so that is the period resolution
+ *  In this example, the green LED blinks at 5Hz. Red blinks at 7.35Hz
+ *  Adjust as needed
  *
  *
  */ 
@@ -127,12 +127,12 @@ void loop() {
       
       flashCounter++;
       
-      if (flashCounter%25 == 0){
+      if (flashCounter%25 == 0){  // blink the green LED at 5Hz
         GRNstate = !GRNstate;
         digitalWrite(GRN,GRNstate);
       }
       
-      if (flashCounter%17 == 0){
+      if (flashCounter%17 == 0){  // blink the red LED at 7.35Hz
         REDstate = !REDstate;
         digitalWrite(RED,REDstate);
       }
