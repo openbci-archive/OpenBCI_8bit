@@ -1,6 +1,7 @@
 /*
  * 
  *  >>>> THIS CODE DESIGNED FOR OBCI_8bit board <<<<
+ *  >>>>  THIS IS THE 'BLINK 2 LEDs AT DIFFERENT RATES BRANCH  <<<<
  *
  * This code is written to target an ATmega328P with UNO bootloader. 
  * Adjust as needed if you are testing on different hardware.
@@ -26,7 +27,7 @@
  *  To do this, we will use the sampleCounter variable to time the LED frequency
  *  sampleCounter increments every 4mS, so that is the period resolution
  *  In this example, the green LED blinks at 5Hz. Red blinks at 7.35Hz
- *  Adjust as needed
+ *  Adjust as needed.
  *
  *
  */ 
@@ -67,11 +68,10 @@ int outputType;
 volatile boolean auxAvailable = false;
 boolean useAccelOnly = false;
 //------------------------------------------------------------------------------
-//  << LED Flashing Business
+//  << LED Flashing Business >>
 // Two LEDs with 220ohm series resistors
 int GRN = A0;
 int RED = A1;
-int mod;
 boolean REDstate, GRNstate;
 unsigned long flashCounter = 0;
 //------------------------------------------------------------------------------
@@ -125,15 +125,15 @@ void loop() {
       
       sampleCounter++;    // get ready for next time
       
-      flashCounter++;
+      flashCounter++;     // used to time blinks
       
       if (flashCounter%25 == 0){  // blink the green LED at 5Hz
-        GRNstate = !GRNstate;
+        GRNstate = !GRNstate;     // toggle state of LED
         digitalWrite(GRN,GRNstate);
       }
       
       if (flashCounter%17 == 0){  // blink the red LED at 7.35Hz
-        REDstate = !REDstate;
+        REDstate = !REDstate;     // toggle state of LED
         digitalWrite(RED,REDstate);
       }
       
