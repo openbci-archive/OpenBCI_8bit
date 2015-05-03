@@ -54,9 +54,13 @@ int outputType;
 //------------------------------------------------------------------------------
 //  << LIS3DH Accelerometer Business >>
 //  LIS3DH_SS on pin 5 defined in OpenBCI library
-volatile boolean auxAvailable = false;
+volatile boolean accelAvailable = false;
 boolean useAccelOnly = false;
 //------------------------------------------------------------------------------
+//  << Auxiliary Data Business >>
+//  useAux boolean in library used to send aux bytes with data stream
+//  call it by saying OBCI.useAux = true
+//  the useAux boolean gets reset in the library in sendChannelData(sampleCounter)
 //------------------------------------------------------------------------------
   
 //------------------------------------------------------------------------------
@@ -92,7 +96,7 @@ void loop() {
       OBCI.updateChannelData(); // retrieve the ADS channel data 8x3 bytes
       if(OBCI.LIS3DH_DataAvailable()){
         OBCI.updateAccelData();    // fresh axis data goes into the X Y Z 
-        auxAvailable = true;    // pass the dataReady to SDCard, if present
+        accelAvailable = true;    // pass the dataReady to SDCard, if present
       }
       if(use_SD){  
         writeDataToSDcard(sampleCounter);   // send the new data to SD card
@@ -245,7 +249,7 @@ void getCommand(char token){
         if(use_SD) stampSD(DEACTIVATE);  // mark the SD log with millis() if it's logging
         break;
      case 'v':
-       // something cool here
+       // something cool could go here
        break;
 // QUERY THE ADS REGISTERS
      case '?':
@@ -280,10 +284,10 @@ void loadChannelSettings(char c){
   }
   c -= '0';
   if(channelSettingsCounter-1 == GAIN_SET){ c <<= 4; }  // shift the gain value to it's bit position
-  OBCI.ADSchannelSettings[currentChannel][channelSettingsCounter-1] = c;  // assign the new value to currentChannel array
+  OBCI.ads.channelSettings[currentChannel][channelSettingsCounter-1] = c;  // assign the new value to currentChannel array
   if(channelSettingsCounter-1 == SRB1_SET){
     for(int i=0; i<8; i++){
-      OBCI.ADSchannelSettings[i][SRB1_SET] = c;
+      OBCI.ads.channelSettings[i][SRB1_SET] = c;
     }
   }
   channelSettingsCounter++;
@@ -387,7 +391,7 @@ int activateAllChannelsToTestCondition(int testInputCode, byte amplitudeCode, by
   OBCI.configureInternalTestSignal(amplitudeCode,freqCode);    
   //loop over all channels to change their state
   for (int Ichan=1; Ichan <= 8; Ichan++) {
-    OBCI.ADSchannelSettings[Ichan-1][INPUT_TYPE_SET] = testInputCode;
+    OBCI.ads.channelSettings[Ichan-1][INPUT_TYPE_SET] = testInputCode;
 //    OBCI.activateChannel(Ichan,gainCode,testInputCode,false);  //Ichan must be [1 8]...it does not start counting from zero
   }
   OBCI.updateADSchannelSettings();

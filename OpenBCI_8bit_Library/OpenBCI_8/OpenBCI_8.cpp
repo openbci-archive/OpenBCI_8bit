@@ -16,11 +16,6 @@ void OpenBCI::initialize(byte G){
 
 void OpenBCI::initialize_ads(void) {
   ads.initialize();  
-  for(int i=0; i<8; i++){
-    for(int j=0; j<6; j++){
-      ADSchannelSettings[i][j] = ads.channelSettings[i][j];
-    }
-  }
 }
 
 void OpenBCI::initialize_accel(byte g) {
@@ -76,15 +71,15 @@ byte OpenBCI::getADS_ID(void){
 }
 
 void OpenBCI::setChannelsToDefault(void){
-  ADSchannelSettings[0][POWER_DOWN] = NO;        // NO = on, YES = off
-  ADSchannelSettings[0][GAIN_SET] = ADS_GAIN24;     // Gain setting
-  ADSchannelSettings[0][INPUT_TYPE_SET] = ADSINPUT_NORMAL;// input muxer setting
-  ADSchannelSettings[0][BIAS_SET] = YES;    // add this channel to bias generation
-  ADSchannelSettings[0][SRB2_SET] = YES;       // connect this P side to SRB2
-  ADSchannelSettings[0][SRB1_SET] = NO;        // don't use SRB1
+  ads.channelSettings[0][POWER_DOWN] = NO;        // NO = on, YES = off
+  ads.channelSettings[0][GAIN_SET] = ADS_GAIN24;     // Gain setting
+  ads.channelSettings[0][INPUT_TYPE_SET] = ADSINPUT_NORMAL;// input muxer setting
+  ads.channelSettings[0][BIAS_SET] = YES;    // add this channel to bias generation
+  ads.channelSettings[0][SRB2_SET] = YES;       // connect this P side to SRB2
+  ads.channelSettings[0][SRB1_SET] = NO;        // don't use SRB1
   for(int i=1; i<8; i++){
     for(int j=0; j<6; j++){
-      ADSchannelSettings[i][j] = ADSchannelSettings[0][j];
+      ads.channelSettings[i][j] = ads.channelSettings[0][j];
     }
   }
   updateADSchannelSettings();
@@ -97,41 +92,36 @@ void OpenBCI::setChannelsToDefault(void){
 }
 
 void OpenBCI::setChannelsToEMG(void){
-  ADSchannelSettings[0][POWER_DOWN] = NO;        // NO = on, YES = off
-  ADSchannelSettings[0][GAIN_SET] = ADS_GAIN12;     // Gain setting
-  ADSchannelSettings[0][INPUT_TYPE_SET] = ADSINPUT_NORMAL;// input muxer setting
-  ADSchannelSettings[0][BIAS_SET] = NO;    // add this channel to bias generation
-  ADSchannelSettings[0][SRB2_SET] = NO;       // connect this P side to SRB2
-  ADSchannelSettings[0][SRB1_SET] = NO;        // don't use SRB1
+  ads.channelSettings[0][POWER_DOWN] = NO;        // NO = on, YES = off
+  ads.channelSettings[0][GAIN_SET] = ADS_GAIN12;     // Gain setting
+  ads.channelSettings[0][INPUT_TYPE_SET] = ADSINPUT_NORMAL;// input muxer setting
+  ads.channelSettings[0][BIAS_SET] = NO;    // add this channel to bias generation
+  ads.channelSettings[0][SRB2_SET] = NO;       // connect this P side to SRB2
+  ads.channelSettings[0][SRB1_SET] = NO;        // don't use SRB1
   for(int i=1; i<8; i++){
     for(int j=0; j<6; j++){
-      ADSchannelSettings[i][j] = ADSchannelSettings[0][j];
+      ads.channelSettings[i][j] = ads.channelSettings[0][j];
     }
   }
   updateADSchannelSettings();
 }
 
 void OpenBCI::setChannelsToECG(void){
-  ADSchannelSettings[0][POWER_DOWN] = NO;        // NO = on, YES = off
-  ADSchannelSettings[0][GAIN_SET] = ADS_GAIN12;     // Gain setting
-  ADSchannelSettings[0][INPUT_TYPE_SET] = ADSINPUT_NORMAL;// input muxer setting
-  ADSchannelSettings[0][BIAS_SET] = NO;    // add this channel to bias generation
-  ADSchannelSettings[0][SRB2_SET] = NO;       // connect this P side to SRB2
-  ADSchannelSettings[0][SRB1_SET] = NO;        // don't use SRB1
+  ads.channelSettings[0][POWER_DOWN] = NO;        // NO = on, YES = off
+  ads.channelSettings[0][GAIN_SET] = ADS_GAIN12;     // Gain setting
+  ads.channelSettings[0][INPUT_TYPE_SET] = ADSINPUT_NORMAL;// input muxer setting
+  ads.channelSettings[0][BIAS_SET] = NO;    // add this channel to bias generation
+  ads.channelSettings[0][SRB2_SET] = NO;       // connect this P side to SRB2
+  ads.channelSettings[0][SRB1_SET] = NO;        // don't use SRB1
   for(int i=1; i<8; i++){
     for(int j=0; j<6; j++){
-      ADSchannelSettings[i][j] = ADSchannelSettings[0][j];
+      ads.channelSettings[i][j] = ads.channelSettings[0][j];
     }
   }
   updateADSchannelSettings();
 }
 
 void OpenBCI::updateADSchannelSettings(void){
-  for(int i=0; i<8; i++){
-    for(int j=0; j<6; j++){
-      ads.channelSettings[i][j] = ADSchannelSettings[i][j];
-    }
-  }
  ads.writeChannelSettings();
 }
 
@@ -140,9 +130,6 @@ void OpenBCI::writeADSchannelSettings(void){
 }
 
 void OpenBCI::writeADSchannelSettings(int chan){
-  for(int j=0; j<6; j++){
-      ads.channelSettings[chan-1][j] = ADSchannelSettings[chan-1][j];
-    }
   ads.writeChannelSettings(chan);
 }
 

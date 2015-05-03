@@ -95,7 +95,7 @@ void ADS1299::writeChannelSettings(void){
 
   for(byte i=0; i<8; i++){ // write 8 channel settings
     setting = 0x00;
-    if(channelSettings[i][POWER_DOWN] == YES) setting |= 0x80;
+    if(channelSettings[i][POWER_DOWN] == YES) {setting |= 0x80;}
     setting |= channelSettings[i][GAIN_SET]; // gain
     setting |= channelSettings[i][INPUT_TYPE_SET]; // input code
     if(channelSettings[i][SRB2_SET] == YES){
@@ -126,14 +126,18 @@ void ADS1299::writeChannelSettings(void){
       
     if(channelSettings[i][SRB1_SET] == YES){
       useSRB1 = true;
-    }else{
-      useSRB1 = false;
     }
   }
     if(useSRB1){
+      for(int i=0; i<8; i++){
+        channelSettings[i][SRB1_SET] = YES;
+      }
       WREG(MISC1,0x20);     // close all SRB1 swtiches
     }else{
-      WREG(MISC1,0x00);     // open all SRB1 switches
+      for(int i=0; i<8; i++){
+        channelSettings[i][SRB1_SET] = NO;
+      }
+      WREG(MISC1,0x00);
     }
 }
 
@@ -145,7 +149,7 @@ void ADS1299::writeChannelSettings(int N){
   SDATAC(); delay(1);      // exit Read Data Continuous mode to communicate with ADS
   
     setting = 0x00;
-    if(channelSettings[N][POWER_DOWN] == YES) setting |= 0x80;
+    if(channelSettings[N][POWER_DOWN] == YES) {setting |= 0x80;}
     setting |= channelSettings[N][GAIN_SET]; // gain
     setting |= channelSettings[N][INPUT_TYPE_SET]; // input code
     if(channelSettings[N][SRB2_SET] == YES){
@@ -175,10 +179,19 @@ void ADS1299::writeChannelSettings(int N){
       WREG(BIAS_SENSN,setting); delay(1); //send the modified byte back to the ADS
       
     if(channelSettings[N][SRB1_SET] == YES){
-      WREG(MISC1,0x20);     // close all SRB1 swtiches
-    }else{
-      WREG(MISC1,0x00);     // open all SRB1 swtiches
+    for(int i=0; i<8; i++){
+      channelSettings[i][SRB1_SET] = YES;
     }
+    useSRB1 = true;
+      WREG(MISC1,0x20);     // close all SRB1 swtiches
+  }
+  if((channelSettings[N][SRB1_SET] == NO) && (useSRB1 == true)){
+    for(int i=0; i<8; i++){
+      channelSettings[i][SRB1_SET] = NO;
+    }
+    useSRB1 = false;
+    WREG(MISC1,0x00);
+  }
 }
 
 //  deactivate the given channel...note: stops data colleciton to issue its commands
@@ -191,21 +204,21 @@ void ADS1299::deactivateChannel(int N)
   SDATAC(); delay(1);      // exit Read Data Continuous mode to communicate with ADS
   //shut down the channel
   N = constrain(N-1,0,7);  //subtracts 1 so that we're counting from 0, not 1
-//  reg = CH1SET+(byte)N;						// select the current channel
-  setting = RREG(CH1SET+(byte)N); delay(1);	// get the current channel settings
-  bitSet(setting,7);  						// set bit7 to shut down channel
-//  if (channelSettings[N][SRB2_SET] == YES)
-  bitClear(setting,3);  	// clear bit3 to disclude from SRB2 
-  WREG(CH1SET+(byte)N,setting); delay(1);	    // write the new value to disable the channel
+//  reg = CH1SET+(byte)N;           // select the current channel
+  setting = RREG(CH1SET+(byte)N); delay(1); // get the current channel settings
+  bitSet(setting,7);              // set bit7 to shut down channel
+  channelSettings[N][POWER_DOWN] = YES;  // keep track of channel on/off state
+  bitClear(setting,3);    // clear bit3 to disclude from SRB2 
+  WREG(CH1SET+(byte)N,setting); delay(1);     // write the new value to disable the channel
   
   //remove the channel from the bias generation...
-  setting = RREG(BIAS_SENSP); delay(1);	//get the current bias settings
-  bitClear(setting,N);          				//clear this channel's bit to remove from bias generation
-  WREG(BIAS_SENSP,setting); delay(1); 	//send the modified byte back to the ADS
+  setting = RREG(BIAS_SENSP); delay(1); //get the current bias settings
+  bitClear(setting,N);                  //clear this channel's bit to remove from bias generation
+  WREG(BIAS_SENSP,setting); delay(1);   //send the modified byte back to the ADS
 
-  setting = RREG(BIAS_SENSN); delay(1);	//get the current bias settings
-  bitClear(setting,N);          				//clear this channel's bit to remove from bias generation
-  WREG(BIAS_SENSN,setting); delay(1);  	//send the modified byte back to the ADS
+  setting = RREG(BIAS_SENSN); delay(1); //get the current bias settings
+  bitClear(setting,N);                  //clear this channel's bit to remove from bias generation
+  WREG(BIAS_SENSN,setting); delay(1);   //send the modified byte back to the ADS
   
   leadOffSettings[N][0] = leadOffSettings[N][1] = NO; // stop lead off detection 
   changeChannelLeadOffDetection();
@@ -215,40 +228,40 @@ void ADS1299::deactivateChannel(int N)
 //  N is 1 through 8
 void ADS1299::activateChannel(int N) 
 {
-	byte setting;  
+  byte setting;  
    
   if ((N < 1) || (N > 8)) return; //check the inputs
   N = constrain(N-1,0,7);  //shift down by one
   //proceed...first, disable any data collection
   SDATAC(); delay(1);      // exit Read Data Continuous mode to communicate with ADS
-    setting = 0x00;
-    setting |= channelSettings[N][GAIN_SET]; // gain
-    setting |= channelSettings[N][INPUT_TYPE_SET]; // input code
-    if(useSRB2[N] == true){channelSettings[N][SRB2_SET] = YES;}else{channelSettings[N][SRB2_SET] = NO;}
-    if(channelSettings[N][SRB2_SET] == YES) bitSet(setting,3); // close this SRB2 switch
-    WREG(CH1SET+N, setting);
-    // add or remove from inclusion in BIAS generation
-      if(useInBias[N]){channelSettings[N][BIAS_SET] = YES;}else{channelSettings[N][BIAS_SET] = NO;}
-      setting = RREG(BIAS_SENSP);       //get the current P bias settings
-      if(channelSettings[N][BIAS_SET] == YES){
-        bitSet(setting,N);    //set this channel's bit to add it to the bias generation
-      }else{
-        bitClear(setting,N);  // clear this channel's bit to remove from bias generation
-      }
-      WREG(BIAS_SENSP,setting); delay(1); //send the modified byte back to the ADS
-      setting = RREG(BIAS_SENSN);       //get the current N bias settings
-      if(channelSettings[N][BIAS_SET] == YES){
-        bitSet(setting,N);    //set this channel's bit to add it to the bias generation
-      }else{
-        bitClear(setting,N);  // clear this channel's bit to remove from bias generation
-      }
-      WREG(BIAS_SENSN,setting); delay(1); //send the modified byte back to the ADS
-      
-    setting = 0x00;
-    if(useSRB1) setting = 0x20;
-    WREG(MISC1,setting);     // close all SRB1 swtiches if desired
+  setting = 0x00;
+  channelSettings[N][POWER_DOWN] = NO; // keep track of channel on/off state
+  setting |= channelSettings[N][GAIN_SET]; // gain
+  setting |= channelSettings[N][INPUT_TYPE_SET]; // input code
+  if(useSRB2[N] == true){channelSettings[N][SRB2_SET] = YES;}else{channelSettings[N][SRB2_SET] = NO;}
+  if(channelSettings[N][SRB2_SET] == YES) bitSet(setting,3); // close this SRB2 switch
+  WREG(CH1SET+N, setting);
+  // add or remove from inclusion in BIAS generation
+    if(useInBias[N]){channelSettings[N][BIAS_SET] = YES;}else{channelSettings[N][BIAS_SET] = NO;}
+    setting = RREG(BIAS_SENSP);       //get the current P bias settings
+    if(channelSettings[N][BIAS_SET] == YES){
+      bitSet(setting,N);    //set this channel's bit to add it to the bias generation
+    }else{
+      bitClear(setting,N);  // clear this channel's bit to remove from bias generation
+    }
+    WREG(BIAS_SENSP,setting); delay(1); //send the modified byte back to the ADS
+    setting = RREG(BIAS_SENSN);       //get the current N bias settings
+    if(channelSettings[N][BIAS_SET] == YES){
+      bitSet(setting,N);    //set this channel's bit to add it to the bias generation
+    }else{
+      bitClear(setting,N);  // clear this channel's bit to remove from bias generation
+    }
+    WREG(BIAS_SENSN,setting); delay(1); //send the modified byte back to the ADS
+    
+  setting = 0x00;
+  if(useSRB1) setting = 0x20;
+  WREG(MISC1,setting);     // close all SRB1 swtiches if desired
 };
-
 
 
 
