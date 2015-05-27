@@ -147,9 +147,6 @@ void OpenBCI::deactivateChannel(int N){
 }
 
 void OpenBCI::startStreaming(void){
-  if(useAccel){
-    accel.enable_accel(RATE_25HZ);
-  }
   ads.startADS();
 }
 
