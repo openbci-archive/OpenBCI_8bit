@@ -529,7 +529,7 @@ void ADS1299::WREGS(byte _address, byte _numRegistersMinusOne) {
   for (int i=_address; i <=(_address + _numRegistersMinusOne); i++){
     xfer(regData[i]);     //  Write to the registers
   } 
-  digitalWrite(CS,HIGH);        //  close SPI
+  csHigh();        //  close SPI
   if(verbosity){
     Serial.print(F("Registers "));
     printHex(_address); Serial.print(F(" to "));
